@@ -66,12 +66,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Couldn't find default device: %s\n", errbuf);
         return(2);
     }
-    /* Find the properties for the device */
-    if (pcap_lookupnet(dev, &net, &mask, errbuf) == -1) {
-        fprintf(stderr, "Couldn't get netmask for device %s: %s\n", dev, errbuf);
-        net = 0;
-        mask = 0;
-    }
+
     /* Open the session in promiscuous mode */
     handle = pcap_open_live(dev, BUFSIZ, 1, 1000, errbuf);
     if (handle == NULL) {
@@ -81,8 +76,9 @@ int main(int argc, char *argv[])
 
     /* Grab a packet */
     
-    
+  
         packet = pcap_next(handle, &header);
+	
         /* Print its length */
         printf("Jacked a packet with length of [%d]\n", header.len);
 
