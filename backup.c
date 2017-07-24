@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <arpa/inet.h>
 #include <string.h>
+#include <netinet/in.h>
+
 
 struct mac{
     u_int8_t dest_addr[6];
@@ -108,10 +110,13 @@ int main(int argc, char *argv[])
             (unsigned)mac_addr->dest_addr[4],
             (unsigned)mac_addr->dest_addr[5]);
 
- 
+ 	char buf[20];
+	char buf1[20];
+	inet_ntop(AF_INET,&(IPheader->ip_src),buf,20);
+	inet_ntop(AF_INET,&(IPheader->ip_dest),buf1,20);
         printf("==============IP================\n");
-        printf("Src Address : %s\n", inet_ntoa(IPheader->ip_src));
-        printf("Dest Address : %s\n", inet_ntoa(IPheader->ip_dest));
+        printf("Src Address : %s\n",buf);
+        printf("Dest Address : %s\n",buf1);
 
         
 
@@ -127,8 +132,11 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 	
+	packet += sizeof(struct mac);
+	packet += sizeof(struct ethernet);
+
         int num=0;
-        int all_packet_len = (header->len);
+        int all_packet_len = ((header->len)-(sizeof(struct mac) + sizeof(struct ethernet) + sizeof(struct tcp)));
         printf("packet len : %d\n",all_packet_len);
 	printf("header->len %d\n",header->len);
 	printf("packet size %d\n",(int)(sizeof(packet)));
