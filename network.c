@@ -61,12 +61,12 @@ int main(int argc, char *argv[])
     int status;
 
     /* Define the device */
-    dev = pcap_lookupdev(errbuf);
+    dev = argv[1];
     if (dev == NULL) {
         fprintf(stderr, "Couldn't find default device: %s\n", errbuf);
         return(2);
     }
-
+    
     /* Open the session in promiscuous mode */
     handle = pcap_open_live(dev, BUFSIZ, 1, 1000, errbuf);
     if (handle == NULL) {
@@ -76,16 +76,36 @@ int main(int argc, char *argv[])
 
     /* Grab a packet */
     
-  
-        packet = pcap_next(handle, &header);
-	
-        /* Print its length */
+    while(1)
+	{
+        int ppp = pcap_next_ex(handle, &header, &packet);
+        
         printf("Jacked a packet with length of [%d]\n", header.len);
-
+	if(ppp==0)
+	{
+		continue;
+	}
+	if(ppp<0)
+	{
+		break;
+	}
 
         struct mac * mac_addr;
         mac_addr = (struct mac *)packet;
+	
 
+	struct ethernet * IPheader;
+        packet += sizeof(struct mac);
+        IPheader = (struct ethernet *)packet;
+
+	struct tcp * TCPheader;
+        TCPheader = (struct tcp *)(packet + IPheader->ip_v * 4);
+	
+	if(mac_addr->d_type==0x0800)
+	{
+		printf("This is Ipv4!!!\n");
+	}
+		
         printf("==============MAC===============\n");
         printf("Src_MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
             (unsigned)mac_addr->src_addr[0],
@@ -102,23 +122,25 @@ int main(int argc, char *argv[])
             (unsigned)mac_addr->dest_addr[4],
             (unsigned)mac_addr->dest_addr[5]);
 
-        struct ethernet * IPheader;
-        packet += sizeof(struct mac);
-        IPheader = (struct ethernet *)packet;
+ 
         printf("==============IP================\n");
         printf("Src Address : %s\n", inet_ntoa(IPheader->ip_src));
         printf("Dest Address : %s\n", inet_ntoa(IPheader->ip_dest));
 
         
-        struct tcp * TCPheader;
-        TCPheader = (struct tcp *)(packet + IPheader->ip_v * 4);
-        // #define IPPROTO_TCP  6 /* tcp */
-        if(IPheader->ip_p == 6)
+
+        if(ntohs(TCPheader->dest_port) == 80 || ntohs(TCPheader->source_port)==80)
         {
             printf("=============PORT===============\n");
             printf("Src_Port : %d\n" , ntohs(TCPheader->source_port));
             printf("Dest_Port : %d\n\n\n" , ntohs(TCPheader->dest_port));
         }
+	else
+	{
+		printf("TCPheader.dest_port !!!Error!!!\n");
+		return 0;
+	}
+
         int num=0;
         int sf = ((header.len)-sizeof(packet));
         while(sf--)
@@ -133,7 +155,7 @@ int main(int argc, char *argv[])
                 printf("%02x", *(packet++));
             }
         }
-    
+    }
     pcap_close(handle);
     return(0);
 }
