@@ -80,7 +80,6 @@ int main(int argc, char *argv[])
 	{
         int ppp = pcap_next_ex(handle, &header, &packet);
         
-        printf("Jacked a packet with length of [%d]\n", header.len);
 	if(ppp==0)
 	{
 		continue;
