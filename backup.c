@@ -9,10 +9,10 @@ struct mac{
     u_int16_t d_type;
 };
 
-struct ethernet
+struct ethernet //ip header
 {
-    unsigned int ip_v:4;    /* version */
-    unsigned int ip_hl:4;    /* header length */
+    u_int8_t ip_v:4;    /* version */
+    u_int8_t ip_hl:4;    /* header length */
     u_int8_t ip_tos;      /* type of service */
     u_short ip_len;      /* total length */
     u_short ip_id;      /* identification */
@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
     struct bpf_program fp;      /* The compiled filter */
     bpf_u_int32 mask;       /* Our netmask */
     bpf_u_int32 net;        /* Our IP */
-    struct pcap_pkthdr header;  /* The header that pcap gives us */
+    struct pcap_pkthdr *header;  /* The header that pcap gives us */
     const u_char *packet;       /* The actual packet */
     int status;
 
@@ -67,10 +67,10 @@ int main(int argc, char *argv[])
     handle = pcap_open_live(dev, BUFSIZ, 1, 1000, errbuf);
 
     /* Grab a packet */
-    int ppp = 0;
+    int ppp;
 	while(1)
 	{	   
-        packet=pcap_next(handle, &header);
+        ppp=pcap_next_ex(handle, &header,&packet);
 
         struct mac * mac_addr;
         mac_addr = (struct mac *)packet;
@@ -80,13 +80,18 @@ int main(int argc, char *argv[])
         packet += sizeof(struct mac);
         IPheader = (struct ethernet *)packet;
 
+	printf("asfsafsafsfsaf %d\n",(int)(sizeof(struct mac)));
+
 	struct tcp * TCPheader;
         TCPheader = (struct tcp *)(packet + IPheader->ip_v * 4);
 	
-	printf("ip4 cheak!! : %x\n",mac_addr->d_type);
-	if(mac_addr->d_type==6)
+	printf("ip4 cheak!! : %d\n",mac_addr->d_type);
+
+	if(mac_addr->d_type==8)
 	printf("This is ipv4 !!! :\n");
-		
+	else
+	return 0;
+
         printf("==============MAC===============\n");
         printf("Src_MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
             (unsigned)mac_addr->src_addr[0],
@@ -121,14 +126,16 @@ int main(int argc, char *argv[])
 		printf("TCPheader.dest_port !!!Error!!!\n");
 		return 0;
 	}
-
+	
         int num=0;
-        int sf = ((header.len)-sizeof(packet));
-        printf("packet len : %d\n",sf);
+        int all_packet_len = (header->len);
+        printf("packet len : %d\n",all_packet_len);
+	printf("header->len %d\n",header->len);
+	printf("packet size %d\n",(int)(sizeof(packet)));
+	printf("ip heder len %d\n",((struct ethernet*)(packet+14))->ip_hl);
 	
-	
-	int backup = sf;
-	while(sf--)
+	int backup = all_packet_len;
+	while(all_packet_len--)
         {
             num++;
             if(num%16 == 0)

@@ -1,2 +1,2 @@
-test: network.c
-	gcc network.c -lpcap
+test: backup.c
+	gcc backup.c -lpcap
